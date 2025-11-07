@@ -9,6 +9,8 @@ import '../modules/calendar/bindings/calendar_binding.dart';
 import '../modules/calendar/views/calendar_view.dart';
 import '../modules/todolist/bindings/todolist_binding.dart';
 import '../modules/todolist/views/todolist_view.dart';
+import '../modules/conversation_analysis/bindings/conversation_analysis_binding.dart';
+import '../modules/conversation_analysis/views/conversation_analysis_view.dart';
 
 part 'app_routes.dart';
 
@@ -26,6 +28,7 @@ class AppPages {
         ProfileBinding(),
         CalendarBinding(),
         TodolistBinding(),
+        ConversationAnalysisBinding(),
       ],
     ),
     GetPage(
@@ -47,6 +50,11 @@ class AppPages {
       name: _Paths.TODOLIST,
       page: () => const TodolistView(),
       binding: TodolistBinding(),
+    ),
+    GetPage(
+      name: _Paths.CONVERSATION_ANALYSIS,
+      page: () => const ConversationAnalysisView(),
+      binding: ConversationAnalysisBinding(),
     ),
   ];
 }

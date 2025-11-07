@@ -7,6 +7,7 @@ abstract class Routes {
   static const PROFILE = _Paths.PROFILE;
   static const CALENDAR = _Paths.CALENDAR;
   static const TODOLIST = _Paths.TODOLIST;
+  static const CONVERSATION_ANALYSIS = _Paths.CONVERSATION_ANALYSIS;
 }
 
 abstract class _Paths {
@@ -16,4 +17,5 @@ abstract class _Paths {
   static const PROFILE = '/profile';
   static const CALENDAR = '/calendar';
   static const TODOLIST = '/todolist';
+  static const CONVERSATION_ANALYSIS = '/conversation-analysis';
 }

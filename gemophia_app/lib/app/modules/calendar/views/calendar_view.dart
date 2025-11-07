@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:table_calendar/table_calendar.dart';
 import '../controllers/calendar_controller.dart';
 
 class CalendarView extends GetView<CalendarController> {
@@ -11,11 +12,56 @@ class CalendarView extends GetView<CalendarController> {
       body: SafeArea(
         child: Column(
           children: [
-            _buildCalendarHeader(context),
-            _buildCalendar(context),
-            const Divider(),
+            Obx(() => TableCalendar(
+              firstDay: DateTime.utc(2020, 1, 1),
+              lastDay: DateTime.utc(2030, 12, 31),
+              focusedDay: controller.selectedDate.value,
+              locale: 'ko_KR',
+              selectedDayPredicate: (day) {
+                return isSameDay(controller.selectedDate.value, day);
+              },
+              onDaySelected: (selectedDay, focusedDay) {
+                controller.selectDate(selectedDay);
+              },
+              eventLoader: (day) {
+                return controller.getEventsForDay(day);
+              },
+              calendarStyle: CalendarStyle(
+                selectedDecoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor,
+                  shape: BoxShape.circle,
+                ),
+                todayDecoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
+                  shape: BoxShape.circle,
+                ),
+                markerDecoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.secondary,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              headerStyle: const HeaderStyle(
+                formatButtonVisible: false,
+                titleCentered: true,
+              ),
+              daysOfWeekStyle: const DaysOfWeekStyle(
+                weekdayStyle: TextStyle(color: Colors.black),
+                weekendStyle: TextStyle(color: Colors.red),
+              ),
+            )),
+            const SizedBox(height: 8),
             Expanded(
-              child: _buildEventsList(context),
+              child: Obx(() {
+                final events = controller.getEventsForDay(controller.selectedDate.value);
+                return ListView.builder(
+                  itemCount: events.length,
+                  itemBuilder: (context, index) {
+                    return ListTile(
+                      title: Text(events[index]),
+                    );
+                  },
+                );
+              }),
             ),
           ],
         ),
@@ -27,201 +73,37 @@ class CalendarView extends GetView<CalendarController> {
     );
   }
 
-  Widget _buildCalendarHeader(BuildContext context) {
-    return Obx(() {
-      final date = controller.selectedDate.value;
-      return Container(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              '${date.year}년 ${date.month}월',
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.chevron_left),
-                  onPressed: () {
-                    controller.selectDate(
-                      DateTime(date.year, date.month - 1, date.day),
-                    );
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.chevron_right),
-                  onPressed: () {
-                    controller.selectDate(
-                      DateTime(date.year, date.month + 1, date.day),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ],
-        ),
-      );
-    });
-  }
-
-  Widget _buildCalendar(BuildContext context) {
-    return Obx(() {
-      final date = controller.selectedDate.value;
-      final firstDayOfMonth = DateTime(date.year, date.month, 1);
-      final lastDayOfMonth = DateTime(date.year, date.month + 1, 0);
-      final daysInMonth = lastDayOfMonth.day;
-      final startWeekday = firstDayOfMonth.weekday;
-
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: ['일', '월', '화', '수', '목', '금', '토']
-                  .map((day) => Expanded(
-                        child: Center(
-                          child: Text(
-                            day,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: day == '일'
-                                  ? Colors.red
-                                  : day == '토'
-                                      ? Colors.blue
-                                      : null,
-                            ),
-                          ),
-                        ),
-                      ))
-                  .toList(),
-            ),
-            const SizedBox(height: 8),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 7,
-                childAspectRatio: 1,
-              ),
-              itemCount: daysInMonth + startWeekday,
-              itemBuilder: (context, index) {
-                if (index < startWeekday) {
-                  return const SizedBox();
-                }
-
-                final day = index - startWeekday + 1;
-                final currentDate = DateTime(date.year, date.month, day);
-                final isSelected = currentDate.day == date.day &&
-                    currentDate.month == date.month &&
-                    currentDate.year == date.year;
-                final hasEvents =
-                    controller.getEventsForDay(currentDate).isNotEmpty;
-
-                return GestureDetector(
-                  onTap: () => controller.selectDate(currentDate),
-                  child: Container(
-                    margin: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? Theme.of(context).primaryColor
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(8),
-                      border: hasEvents
-                          ? Border.all(
-                              color: Theme.of(context).primaryColor,
-                              width: 2,
-                            )
-                          : null,
-                    ),
-                    child: Center(
-                      child: Text(
-                        '$day',
-                        style: TextStyle(
-                          color: isSelected ? Colors.white : null,
-                          fontWeight:
-                              hasEvents ? FontWeight.bold : FontWeight.normal,
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      );
-    });
-  }
-
-  Widget _buildEventsList(BuildContext context) {
-    return Obx(() {
-      final events = controller.getEventsForDay(controller.selectedDate.value);
-
-      if (events.isEmpty) {
-        return Center(
-          child: Text(
-            '일정이 없습니다',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-            ),
-          ),
-        );
-      }
-
-      return ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: events.length,
-        itemBuilder: (context, index) {
-          return Card(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: ListTile(
-              leading: const Icon(Icons.event),
-              title: Text(events[index]),
-            ),
-          );
-        },
-      );
-    });
-  }
-
   void _showAddEventDialog(BuildContext context) {
     final textController = TextEditingController();
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('일정 추가'),
-        content: TextField(
-          controller: textController,
-          decoration: const InputDecoration(
-            hintText: '일정을 입력하세요',
+      builder:
+          (context) => AlertDialog(
+            title: const Text('일정 추가'),
+            content: TextField(
+              controller: textController,
+              decoration: const InputDecoration(hintText: '일정을 입력하세요'),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('취소'),
+              ),
+              TextButton(
+                onPressed: () {
+                  if (textController.text.isNotEmpty) {
+                    controller.addEvent(
+                      controller.selectedDate.value,
+                      textController.text,
+                    );
+                    Navigator.pop(context);
+                  }
+                },
+                child: const Text('추가'),
+              ),
+            ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () {
-              if (textController.text.isNotEmpty) {
-                controller.addEvent(
-                  controller.selectedDate.value,
-                  textController.text,
-                );
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('추가'),
-          ),
-        ],
-      ),
     );
   }
 }
