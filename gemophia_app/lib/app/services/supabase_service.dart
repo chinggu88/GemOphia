@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:gemophia_app/app/routes/app_pages.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:gemophia_app/app/core/config/env_config.dart';
@@ -9,6 +10,11 @@ class SupabaseService extends GetxController {
 
   late final SupabaseClient _client;
 
+  final _user = User(aud:'',userMetadata:Map(),updatedAt: null, id: '0', email: null,appMetadata: Map(),createdAt: '').obs;
+
+  set user(User value) => _user.value = value;
+  User get user => _user.value;
+
   @override
   void onInit() async {
     super.onInit();
@@ -17,14 +23,16 @@ class SupabaseService extends GetxController {
       anonKey: EnvConfig.supabaseAnonKey,
     );
     _client = Supabase.instance.client;
-
+    
     // 인증 상태 변화 수신
-    SupabaseService.to.client.auth.onAuthStateChange.listen((data) {
+    _client.auth.onAuthStateChange.listen((data) {
       final event = data.event;
       final session = data.session;
       if (session != null) {
         // 로그인 성공
-        log('로그인 성공: ${session.user.email}');
+        print('로그인 성공: ${session.user.email}');
+        user = session.user;
+        Get.offAllNamed(Routes.HOME);
         // Navigator.of(context).pushReplacement(
         //   MaterialPageRoute(builder: (_) => HomePage()),
         // );
