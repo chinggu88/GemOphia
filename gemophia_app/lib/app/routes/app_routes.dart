@@ -8,6 +8,7 @@ abstract class Routes {
   static const CALENDAR = _Paths.CALENDAR;
   static const TODOLIST = _Paths.TODOLIST;
   static const CONVERSATION_ANALYSIS = _Paths.CONVERSATION_ANALYSIS;
+  static const LOGIN = _Paths.LOGIN;
 }
 
 abstract class _Paths {
@@ -18,4 +19,5 @@ abstract class _Paths {
   static const CALENDAR = '/calendar';
   static const TODOLIST = '/todolist';
   static const CONVERSATION_ANALYSIS = '/conversation-analysis';
+  static const LOGIN = '/login';
 }

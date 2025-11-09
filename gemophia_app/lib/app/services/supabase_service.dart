@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:gemophia_app/app/core/config/env_config.dart';
@@ -15,6 +17,20 @@ class SupabaseService extends GetxController {
       anonKey: EnvConfig.supabaseAnonKey,
     );
     _client = Supabase.instance.client;
+
+    // 인증 상태 변화 수신
+    SupabaseService.to.client.auth.onAuthStateChange.listen((data) {
+      final event = data.event;
+      final session = data.session;
+      if (session != null) {
+        // 로그인 성공
+        log('로그인 성공: ${session.user.email}');
+        // Navigator.of(context).pushReplacement(
+        //   MaterialPageRoute(builder: (_) => HomePage()),
+        // );
+      }
+    });
+    
   }
 
   SupabaseClient get client => _client;
@@ -23,6 +39,20 @@ class SupabaseService extends GetxController {
 
   Stream<AuthState> get authStateChanges => _client.auth.onAuthStateChange;
 
+  Future<bool> login(String email) async {
+    try {
+      await _client.auth.signInWithOtp(
+        email: email,
+      );
+      return true;
+    }
+      catch (e) {
+      // throw Exception('Login failed: $e');
+      return false;
+    }
+   
+
+  }
   // Create
   Future<Map<String, dynamic>> create({
     required String table,
