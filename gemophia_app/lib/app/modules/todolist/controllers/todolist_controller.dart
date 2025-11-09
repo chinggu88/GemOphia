@@ -1,16 +1,10 @@
 import 'dart:developer';
 
+import 'package:gemophia_app/app/data/models/todo_model.dart';
 import 'package:gemophia_app/app/services/supabase_service.dart';
 import 'package:get/get.dart';
 
-class Todo {
-  final String id;
-  final String title;
-  final RxBool isCompleted;
 
-  Todo({required this.id, required this.title, bool isCompleted = false})
-    : isCompleted = isCompleted.obs;
-}
 
 class TodolistController extends GetxController {
   final _minDate = DateTime(DateTime.now().year, 1, 1).obs;
@@ -22,44 +16,34 @@ class TodolistController extends GetxController {
   set maxDate(DateTime value) => _maxDate.value = value;
 
   @override
-  void onInit() {
+  Future<void> onInit() async {
     // TODO: implement onInit
     super.onInit();
 
-    SupabaseService.to
-        .readAll(table: 'todo')
-        .then((data) {
-          // Handle fetched data
-          log('asdf todo data: $data');
-        })
-        .catchError((error) {
-          // Handle error
-        });
+    final temptodo = await SupabaseService.to
+        .readAll(table: 'todo');
+    todos = temptodo.map((e) => Todo.fromJson(e)).toList();
+    log('asdf todos length: ${todos.length}');
+        
   }
 
-  final todos = <Todo>[].obs;
+  final _todos = <Todo>[].obs;
+  set todos(List<Todo> value) => _todos.value = value;
+  List<Todo> get todos => _todos.toList();
 
-  void addTodo(String title) {
-    final todo = Todo(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      title: title,
-    );
-    todos.add(todo);
-  }
+
+
 
   void toggleTodo(String id) {
     final index = todos.indexWhere((todo) => todo.id == id);
-    if (index != -1) {
-      todos[index].isCompleted.value = !todos[index].isCompleted.value;
-      todos.refresh();
-    }
+    // if (index != -1) {
+    //   todos[index].isCompleted = !todos[index].isCompleted;
+      
+    // }
   }
 
   void deleteTodo(String id) {
     todos.removeWhere((todo) => todo.id == id);
   }
 
-  int get completedCount =>
-      todos.where((todo) => todo.isCompleted.value).length;
-  int get pendingCount => todos.where((todo) => !todo.isCompleted.value).length;
 }

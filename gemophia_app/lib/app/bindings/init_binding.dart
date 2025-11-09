@@ -6,7 +6,7 @@ class InitBinding extends Bindings {
   void dependencies() {
     Get.put<SupabaseService>(
       SupabaseService(),
-      permanent: true,
+      permanent: true
     );
   }
 }
