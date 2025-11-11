@@ -43,3 +43,12 @@ https://dribbble.com/shots/17982564-Task-Management-App-UI-Design-To-do-list-Tas
     ├── 데이트 코스 자동 생성
     └── 서프라이즈 이벤트 기획
     └── 작은칭찬 수집가
+
+## app color
+https://www.behance.net/gallery/236098883/Tandem-Couple-Planner-App-UXUI-design?tracking_source=search_projects%7Ccalendar+app+ui+design
+
+
+## UI
+AI 이벤트 제안 시스템
+https://www.behance.net/gallery/235404227/Checkly?tracking_source=search_projects|todo+app+ui&l=5
+

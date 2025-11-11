@@ -45,5 +45,16 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+	<dict>
+		<key>CFBundleTypeRole</key>
+		<string>Editor</string>
+		<key>CFBundleURLSchemes</key>
+		<array>
+		<string>Gemophia</string>  <!-- 여기 `myapp`은 당신이 정한 스킴 -->
+		</array>
+	</dict>
+	</array>
 </dict>
 </plist>
