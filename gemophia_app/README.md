@@ -35,7 +35,6 @@ https://dribbble.com/shots/17982564-Task-Management-App-UI-Design-To-do-list-Tas
 │   ├── 실시간 감정 분석
 │   ├── 대화 내용 자동 요약
 │   ├── 관계 건강도 모니터링
-│   └── 갈등 조기 감지
 │
 └── 🎁 AI 이벤트 제안 시스템
     ├── 기념일 맞춤 이벤트 추천
@@ -52,3 +51,17 @@ https://www.behance.net/gallery/236098883/Tandem-Couple-Planner-App-UXUI-design?
 AI 이벤트 제안 시스템
 https://www.behance.net/gallery/235404227/Checkly?tracking_source=search_projects|todo+app+ui&l=5
 
+## calendar
+https://dribbble.com/shots/19625924-Crypto-mobile-wallet
+
+## todo
+https://dribbble.com/shots/26270232-Personal-Life-Planning-Mobile-App
+
+## 대시보드
+https://dribbble.com/shots/22541272-Spectra-CRM-dashboard
+https://dribbble.com/shots/26384964-Cryptocurrency-Trading-Mobile-App-UI-Design
+https://dribbble.com/shots/26126499-Cryptocurrency-Trading-Mobile-App
+https://dribbble.com/shots/19629851-Glume-Healthcare-Mobile-App-Design-for-Diabetics
+https://dribbble.com/shots/24491831-Email-Marketing-Mobile-App
+https://kr.pinterest.com/pin/357262182952017955/
+https://kr.pinterest.com/pin/665055070017382384/
