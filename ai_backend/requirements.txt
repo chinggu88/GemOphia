@@ -7,9 +7,10 @@ pydantic-settings==2.6.0
 # Database
 supabase==2.9.1
 
-# AI APIs
-openai==1.54.0
-anthropic==0.39.0
+# AI APIs (Modular - easy to swap)
+google-generativeai==0.8.3
+# openai==1.54.0  # Optional
+# anthropic==0.39.0  # Optional
 
 # NLP - Korean
 kiwipiepy==0.18.0

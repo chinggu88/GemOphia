@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     supabase_service_key: str | None = None
 
     # AI APIs
+    ai_provider: str = "gemini"  # gemini, openai, anthropic
+    gemini_api_key: str | None = None
     openai_api_key: str | None = None
     anthropic_api_key: str | None = None
 
