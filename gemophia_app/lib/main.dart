@@ -22,7 +22,7 @@ void main() async {
     ScreenUtilInit(
       designSize: const Size(375, 812),
       child: GetMaterialApp(
-        title: 'GemOphia',
+        title: '퐁당',
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.system,
