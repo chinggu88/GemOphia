@@ -1,3 +1,4 @@
+import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/home_controller.dart';
@@ -15,36 +16,67 @@ class HomeView extends GetView<HomeController> {
     const TodolistView(),
     const ConversationAnalysisView(),
   ];
-
+  static final List<IconData> _iconList = [
+    Icons.person,
+    Icons.calendar_today,
+    Icons.checklist,
+    Icons.analytics,
+  ];
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Obx(() => _pages[controller.currentIndex.value]),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.amber,
+        child: const Icon(Icons.add),
+        onPressed: () {},
+        //params
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+
       bottomNavigationBar: Obx(
-        () => BottomNavigationBar(
-          // backgroundColor: Colors.amber,
-          currentIndex: controller.currentIndex.value,
-          onTap: controller.changeTab,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person),
-              label: 'Profile',
-              backgroundColor: Colors.amber,
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.calendar_today),
-              label: 'Calendar',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.checklist),
-              label: 'Todo List',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.analytics),
-              label: 'Analysis',
-            ),
-          ],
+        () => AnimatedBottomNavigationBar.builder(
+          tabBuilder: (int index, bool isActive) {
+            return Icon(
+              _iconList[index],
+              size: 24,
+              color: isActive ? Colors.amber : Colors.black,
+            );
+          },
+          backgroundColor: Colors.grey,
+          itemCount: _iconList.length,
+          activeIndex: controller.currentIndex.value,
+          gapLocation: GapLocation.center,
+          notchSmoothness: NotchSmoothness.verySmoothEdge,
+          leftCornerRadius: 32,
+          rightCornerRadius: 32,
+          onTap: (index) => controller.changeTab(index),
+          //other params
         ),
+        // () => BottomNavigationBar(
+        //   // backgroundColor: Colors.amber,
+        //   currentIndex: controller.currentIndex.value,
+        //   onTap: controller.changeTab,
+        //   items: const [
+        //     BottomNavigationBarItem(
+        //       icon: Icon(Icons.person),
+        //       label: 'Profile',
+        //       backgroundColor: Colors.amber,
+        //     ),
+        //     BottomNavigationBarItem(
+        //       icon: Icon(Icons.calendar_today),
+        //       label: 'Calendar',
+        //     ),
+        //     BottomNavigationBarItem(
+        //       icon: Icon(Icons.checklist),
+        //       label: 'Todo List',
+        //     ),
+        //     BottomNavigationBarItem(
+        //       icon: Icon(Icons.analytics),
+        //       label: 'Analysis',
+        //     ),
+        //   ],
+        // ),
       ),
     );
   }
