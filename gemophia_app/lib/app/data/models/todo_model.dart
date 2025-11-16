@@ -1,10 +1,10 @@
-class Todo {
+class HeatmapItem {
   int? _id;
   int? _cnt;
   DateTime? _createdAt;
   bool? _isCompleted;
 
-  Todo({int? id, int? cnt, String? createdAt, bool? isCompleted}) {
+  HeatmapItem({int? id, int? cnt, String? createdAt, bool? isCompleted}) {
     if (id != null) {
       this._id = id;
     }
@@ -28,7 +28,7 @@ class Todo {
   bool? get isCompleted => _isCompleted;
   set isCompleted(bool? isCompleted) => _isCompleted = isCompleted;
 
-  Todo.fromJson(Map<String, dynamic> json) {
+  HeatmapItem.fromJson(Map<String, dynamic> json) {
     _id = json['id'];
     _cnt = json['cnt'];
     _createdAt = DateTime.parse(json['created_at'].toString());

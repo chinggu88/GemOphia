@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../values/app_colors.dart';
 
 class AppTheme {
@@ -12,10 +13,16 @@ class AppTheme {
         error: AppColors.error,
         surface: AppColors.surface,
       ),
-      appBarTheme: const AppBarTheme(
+      textTheme: GoogleFonts.notoSansTextTheme(),
+      appBarTheme: AppBarTheme(
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.onPrimary,
         elevation: 0,
+        titleTextStyle: GoogleFonts.notoSans(
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          color: AppColors.onPrimary,
+        ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -25,6 +32,10 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
+          textStyle: GoogleFonts.notoSans(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -33,6 +44,8 @@ class AppTheme {
         ),
         filled: true,
         fillColor: Colors.grey[100],
+        labelStyle: GoogleFonts.notoSans(),
+        hintStyle: GoogleFonts.notoSans(color: Colors.grey),
       ),
     );
   }
@@ -46,10 +59,16 @@ class AppTheme {
         secondary: AppColors.secondary,
         error: AppColors.error,
       ),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFF1E1E1E),
+      textTheme: GoogleFonts.notoSansTextTheme(ThemeData.dark().textTheme),
+      appBarTheme: AppBarTheme(
+        backgroundColor: const Color(0xFF1E1E1E),
         foregroundColor: Colors.white,
         elevation: 0,
+        titleTextStyle: GoogleFonts.notoSans(
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+        ),
       ),
     );
   }
