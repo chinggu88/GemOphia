@@ -1,5 +1,7 @@
 import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:gemophia_app/app/services/supabase_service.dart';
 import 'package:get/get.dart';
 import '../controllers/home_controller.dart';
 import '../../profile/views/profile_view.dart';
@@ -29,7 +31,9 @@ class HomeView extends GetView<HomeController> {
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.amber,
         child: const Icon(Icons.add),
-        onPressed: () {},
+        onPressed: () async {
+          await SupabaseService.to.pickAndUploadFile();
+        },
         //params
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
