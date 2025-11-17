@@ -42,6 +42,10 @@
   - 7가지 감정 분류: 기쁨, 슬픔, 화남, 불안, 중립, 사랑, 피곤
   - KoBERT 기반 한국어 특화 모델 (F1-score 0.87 목표)
 - **대화 요약 생성**: KoBART 기반 추상적 요약
+
+- **Realtime 메시지 분석**: Supabase Realtime으로 새 메시지 자동 감지 및 분석
+- **감정 분석**: Gemini AI를 활용한 한국어 텍스트 감정 분석
+
 - **LSM (Language Style Matching)**: 대화 스타일 유사도 분석
 - **턴테이킹 분석**: 대화 균형 및 역학 분석
 
@@ -90,16 +94,11 @@
 - **배치 처리**: GPU 활용도 극대화
 
 ## 📋 기술 스택
-
-- **프레임워크**: FastAPI
-- **AI 모델**:
-  - Google Gemini (감정 분석 기본값)
-  - GPT-4 (대화 주제 생성, 활동 추천)
-  - KoBERT, KoELECTRA, KcBERT (한국어 감정 분석)
-  - KoBART (대화 요약)
-- **NLP**: Kiwipiepy (한국어 형태소 분석기), Hugging Face Transformers
-- **데이터베이스**: Supabase
-- **캐싱**: Redis (예정)
+- **메인**: Realtime Listener (독립 Python 프로세스)
+- **API (선택)**: FastAPI (수동 분석 API 필요시)
+- **AI 제공자**: Google Gemini (기본값)
+- **NLP**: Kiwipiepy (한국어 형태소 분석기)
+- **데이터베이스**: Supabase (PostgreSQL + Realtime)
 - **언어**: Python 3.11+
 
 ## 🛠️ 설치 및 실행
@@ -129,18 +128,36 @@ cp .env.example .env
 필수 환경 변수:
 ```env
 SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_KEY=your-anon-key
+SUPABASE_KEY=your-service-role-key  # ⚠️ SERVICE_ROLE_KEY 사용!
 GEMINI_API_KEY=your-gemini-api-key
 ```
 
-### 4. 서버 실행
+**중요:** `SUPABASE_KEY`는 **SERVICE_ROLE_KEY**를 사용해야 합니다!
+- Supabase Dashboard → Settings → API → `service_role` (secret)
+
+### 4. Realtime Listener 실행 (메인)
 
 ```bash
-# 개발 모드 (자동 재시작)
-python -m app.main
+python listener.py
+```
 
-# 또는 uvicorn 직접 실행
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+실행되면:
+```
+================================================================================
+🚀 GemOphia Realtime Listener Starting...
+================================================================================
+✅ Realtime Listener is now running!
+   Listening for new messages in 'messages' table...
+```
+
+종료: `Ctrl+C`
+
+### 5. (선택사항) FastAPI 서버 실행
+
+수동 분석 API가 필요한 경우:
+
+```bash
+python -m app.main
 ```
 
 서버 접속: `http://localhost:8000`
