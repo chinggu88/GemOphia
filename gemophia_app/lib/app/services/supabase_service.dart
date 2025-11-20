@@ -1,7 +1,5 @@
-import 'dart:developer';
 import 'dart:io';
 import 'dart:typed_data';
-
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:gemophia_app/app/routes/app_pages.dart';
 import 'package:get/get.dart';
@@ -45,7 +43,9 @@ class SupabaseService extends GetxController {
         // 로그인 성공
         print('로그인 성공: ${session.user.email}');
         user = session.user;
-        Get.offAllNamed(Routes.HOME);
+
+        // couples 테이블에서 현재 사용자 조회
+        _checkCoupleAndNavigate(session.user.id);
         // Navigator.of(context).pushReplacement(
         //   MaterialPageRoute(builder: (_) => HomePage()),
         // );
@@ -58,6 +58,26 @@ class SupabaseService extends GetxController {
   User? get currentUser => _client.auth.currentUser;
 
   Stream<AuthState> get authStateChanges => _client.auth.onAuthStateChange;
+
+  // couples 테이블 조회 후 네비게이션 처리
+  Future<void> _checkCoupleAndNavigate(String uuid) async {
+    try {
+      final result = await readSingle(table: 'couples', match: {'id': uuid});
+
+      if (result != null) {
+        // couples 테이블에 데이터가 있으면 HOME으로 이동
+        Get.offAllNamed(Routes.HOME);
+      } else {
+        // couples 테이블에 데이터가 없으면 INVITE 페이지로 이동
+
+        Get.offAllNamed(Routes.INVITE);
+      }
+    } catch (e) {
+      print('couples 조회 실패: $e');
+      // 에러 발생 시 기본적으로 HOME으로 이동
+      Get.offAllNamed(Routes.HOME);
+    }
+  }
 
   Future<bool> login(String email) async {
     try {

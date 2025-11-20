@@ -9,6 +9,7 @@ abstract class Routes {
   static const TODOLIST = _Paths.TODOLIST;
   static const CONVERSATION_ANALYSIS = _Paths.CONVERSATION_ANALYSIS;
   static const LOGIN = _Paths.LOGIN;
+  static const INVITE = _Paths.INVITE;
 }
 
 abstract class _Paths {
@@ -20,4 +21,5 @@ abstract class _Paths {
   static const TODOLIST = '/todolist';
   static const CONVERSATION_ANALYSIS = '/conversation-analysis';
   static const LOGIN = '/login';
+  static const INVITE = '/invite';
 }

@@ -1,3 +1,4 @@
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -32,7 +33,11 @@ void main() async {
     ..maskColor = Colors.blue.withOpacity(0.5)
     ..userInteractions = true
     ..dismissOnTap = false;
-
+  final appLinks = AppLinks();
+  appLinks.uriLinkStream.listen((uri) {
+    List<String> temp = uri.toString().split('invite_code=');
+    print('asdf ${temp[1]}');
+  });
   runApp(
     ScreenUtilInit(
       designSize: const Size(375, 812),

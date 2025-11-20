@@ -8,6 +8,8 @@ import 'package:gemophia_app/app/services/supabase_service.dart';
 import 'package:get/get.dart';
 
 class TodolistController extends GetxController {
+  static TodolistController get to => Get.find();
+
   final _tasks = <Task>[].obs;
   set tasks(List<Task> value) => _tasks.value = value;
   List<Task> get tasks => _tasks.toList();

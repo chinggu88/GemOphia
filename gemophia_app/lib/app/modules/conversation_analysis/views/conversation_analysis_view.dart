@@ -208,7 +208,7 @@ class ConversationAnalysisView extends GetView<ConversationAnalysisController> {
         _buildMetricCard(
           context,
           label: '총 대화 수',
-          value: controller.totalConversations.value.toString(),
+          value: controller.totalConversations.toString(),
           icon: Icons.chat_bubble_outline,
           color: const Color(0xFF0068C9), // Streamlit blue
         ),
@@ -216,7 +216,7 @@ class ConversationAnalysisView extends GetView<ConversationAnalysisController> {
         _buildMetricCard(
           context,
           label: '평균 응답 시간',
-          value: controller.averageResponseTime.value,
+          value: controller.averageResponseTime,
           icon: Icons.timer_outlined,
           color: const Color(0xFFFF4B4B), // Streamlit red
         ),
@@ -320,12 +320,12 @@ class ConversationAnalysisView extends GetView<ConversationAnalysisController> {
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(
-                            value: controller.relationshipHealth.value / 100,
+                            value: controller.relationshipHealth / 100,
 
                             backgroundColor: Colors.grey[100],
                             valueColor: AlwaysStoppedAnimation<Color>(
                               _getHealthColor(
-                                controller.relationshipHealth.value,
+                                controller.relationshipHealth,
                               ),
                             ),
                           ),
@@ -334,7 +334,7 @@ class ConversationAnalysisView extends GetView<ConversationAnalysisController> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              '${controller.relationshipHealth.value}',
+                              '${controller.relationshipHealth}',
                               style: TextStyle(
                                 fontSize: 42,
                                 fontWeight: FontWeight.w800,

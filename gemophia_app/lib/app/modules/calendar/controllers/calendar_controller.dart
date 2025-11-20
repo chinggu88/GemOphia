@@ -4,8 +4,17 @@ import 'package:get/get.dart';
 import '../../../models/event_model.dart';
 
 class CalendarController extends GetxController {
-  final selectedDate = DateTime.now().obs;
-  final events = <DateTime, List<EventModel>>{}.obs;
+  static CalendarController get to => Get.find();
+
+  // 선택된 날짜
+  final _selectedDate = DateTime.now().obs;
+  DateTime get selectedDate => _selectedDate.value;
+  set selectedDate(DateTime value) => _selectedDate.value = value;
+
+  // 이벤트 목록
+  final _events = <DateTime, List<EventModel>>{}.obs;
+  Map<DateTime, List<EventModel>> get events => _events;
+  set events(Map<DateTime, List<EventModel>> value) => _events.value = value;
 
   @override
   void onInit() {
@@ -121,7 +130,7 @@ class CalendarController extends GetxController {
   }
 
   void selectDate(DateTime date) {
-    selectedDate.value = date;
+    selectedDate = date;
   }
 
   List<EventModel> getEventsForDay(DateTime day) {
@@ -146,16 +155,16 @@ class CalendarController extends GetxController {
       category: category,
     );
 
-    if (events[key] == null) {
-      events[key] = [];
+    if (_events[key] == null) {
+      _events[key] = [];
     }
-    events[key]!.add(event);
-    events.refresh();
+    _events[key]!.add(event);
+    _events.refresh();
   }
 
   void removeEvent(DateTime date, EventModel event) {
     final key = DateTime(date.year, date.month, date.day);
-    events[key]?.remove(event);
-    events.refresh();
+    _events[key]?.remove(event);
+    _events.refresh();
   }
 }

@@ -27,7 +27,7 @@ class HomeView extends GetView<HomeController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Obx(() => _pages[controller.currentIndex.value]),
+      body: Obx(() => _pages[controller.currentIndex]),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.amber,
         child: const Icon(Icons.add),
@@ -49,7 +49,7 @@ class HomeView extends GetView<HomeController> {
           },
           backgroundColor: Colors.grey,
           itemCount: _iconList.length,
-          activeIndex: controller.currentIndex.value,
+          activeIndex: controller.currentIndex,
           gapLocation: GapLocation.center,
           notchSmoothness: NotchSmoothness.verySmoothEdge,
           leftCornerRadius: 32,

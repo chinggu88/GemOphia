@@ -20,10 +20,10 @@ class CalendarView extends GetView<CalendarController> {
               () => TableCalendar(
                 firstDay: DateTime.utc(2020, 1, 1),
                 lastDay: DateTime.utc(2030, 12, 31),
-                focusedDay: controller.selectedDate.value,
+                focusedDay: controller.selectedDate,
                 locale: 'ko_KR',
                 selectedDayPredicate: (day) {
-                  return isSameDay(controller.selectedDate.value, day);
+                  return isSameDay(controller.selectedDate, day);
                 },
                 onDaySelected: (selectedDay, focusedDay) {
                   controller.selectDate(selectedDay);
@@ -92,7 +92,7 @@ class CalendarView extends GetView<CalendarController> {
             Expanded(
               child: Obx(() {
                 final events = controller.getEventsForDay(
-                  controller.selectedDate.value,
+                  controller.selectedDate,
                 );
                 if (events.isEmpty) {
                   return Center(
@@ -352,7 +352,7 @@ class CalendarView extends GetView<CalendarController> {
                     TextButton(
                       onPressed: () {
                         if (contentController.text.isNotEmpty) {
-                          final selectedDate = controller.selectedDate.value;
+                          final selectedDate = controller.selectedDate;
                           DateTime? eventTime;
 
                           if (selectedTime != null) {
@@ -439,7 +439,7 @@ class CalendarView extends GetView<CalendarController> {
                   onTap: () {
                     Navigator.pop(context);
                     controller.removeEvent(
-                      controller.selectedDate.value,
+                      controller.selectedDate,
                       event,
                     );
                   },

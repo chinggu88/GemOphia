@@ -12,13 +12,15 @@ import '../modules/todolist/bindings/todolist_binding.dart';
 import '../modules/todolist/views/todolist_view.dart';
 import '../modules/conversation_analysis/bindings/conversation_analysis_binding.dart';
 import '../modules/conversation_analysis/views/conversation_analysis_view.dart';
+import '../modules/invite/bindings/invite_binding.dart';
+import '../modules/invite/views/invite_view.dart';
 
 part 'app_routes.dart';
 
 class AppPages {
   AppPages._();
 
-  static const INITIAL = Routes.HOME;
+  static const INITIAL = Routes.LOGIN;
 
   static final routes = [
     GetPage(
@@ -57,10 +59,11 @@ class AppPages {
       page: () => const ConversationAnalysisView(),
       binding: ConversationAnalysisBinding(),
     ),
+    GetPage(name: _Paths.LOGIN, page: () => const LoginView()),
     GetPage(
-      name: _Paths.LOGIN,
-      page: () => const LoginView(),
-
+      name: _Paths.INVITE,
+      page: () => const InviteView(),
+      binding: InviteBinding(),
     ),
   ];
 }

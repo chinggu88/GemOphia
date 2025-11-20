@@ -4,22 +4,42 @@ import 'package:gemophia_app/app/services/supabase_service.dart';
 import 'package:get/get.dart';
 
 class ConversationAnalysisController extends GetxController {
-  final emotionScore = 75.obs;
-  final relationshipHealth = 85.obs;
-  final totalConversations = 142.obs;
-  final averageResponseTime = '2.5분'.obs;
+  static ConversationAnalysisController get to => Get.find();
 
+  // 감정 점수
+  final _emotionScore = 75.obs;
+  int get emotionScore => _emotionScore.value;
+  set emotionScore(int value) => _emotionScore.value = value;
+
+  // 관계 건강도
+  final _relationshipHealth = 85.obs;
+  int get relationshipHealth => _relationshipHealth.value;
+  set relationshipHealth(int value) => _relationshipHealth.value = value;
+
+  // 총 대화 수
+  final _totalConversations = 142.obs;
+  int get totalConversations => _totalConversations.value;
+  set totalConversations(int value) => _totalConversations.value = value;
+
+  // 평균 응답 시간
+  final _averageResponseTime = '2.5분'.obs;
+  String get averageResponseTime => _averageResponseTime.value;
+  set averageResponseTime(String value) => _averageResponseTime.value = value;
+
+  // 최소 날짜
   final _minDate = DateTime(DateTime.now().year, 1, 1).obs;
   DateTime get minDate => _minDate.value;
   set minDate(DateTime value) => _minDate.value = value;
 
+  // 최대 날짜
   final _maxDate = DateTime(DateTime.now().year, 12, 31).obs;
   DateTime get maxDate => _maxDate.value;
   set maxDate(DateTime value) => _maxDate.value = value;
 
+  // 히트맵 데이터
   final _heatmap = <HeatmapItem>[].obs;
-  set heatmap(List<HeatmapItem> value) => _heatmap.value = value;
   List<HeatmapItem> get heatmap => _heatmap.toList();
+  set heatmap(List<HeatmapItem> value) => _heatmap.value = value;
 
   final ScrollController scrollController = ScrollController();
 
@@ -31,7 +51,9 @@ class ConversationAnalysisController extends GetxController {
   ];
 
   // 최근 대화 키워드
-  final recentKeywords = <String>['데이트', '영화', '맛집', '주말', '여행'].obs;
+  final _recentKeywords = <String>['데이트', '영화', '맛집', '주말', '여행'].obs;
+  List<String> get recentKeywords => _recentKeywords.toList();
+  set recentKeywords(List<String> value) => _recentKeywords.value = value;
 
   @override
   Future<void> onInit() async {

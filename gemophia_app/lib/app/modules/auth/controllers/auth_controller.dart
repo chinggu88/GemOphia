@@ -1,7 +1,12 @@
 import 'package:get/get.dart';
 
 class AuthController extends GetxController {
-  final isLoggedIn = false.obs;
+  static AuthController get to => Get.find();
+
+  // 로그인 상태
+  final _isLoggedIn = false.obs;
+  bool get isLoggedIn => _isLoggedIn.value;
+  set isLoggedIn(bool value) => _isLoggedIn.value = value;
 
   @override
   void onInit() {
@@ -20,11 +25,11 @@ class AuthController extends GetxController {
 
   void login() {
     // TODO: Implement login logic
-    isLoggedIn.value = true;
+    isLoggedIn = true;
   }
 
   void logout() {
     // TODO: Implement logout logic
-    isLoggedIn.value = false;
+    isLoggedIn = false;
   }
 }

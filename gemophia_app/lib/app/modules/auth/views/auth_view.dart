@@ -18,16 +18,16 @@ class AuthView extends GetView<AuthController> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                controller.isLoggedIn.value ? 'Logged In' : 'Logged Out',
+                controller.isLoggedIn ? 'Logged In' : 'Logged Out',
                 style: const TextStyle(fontSize: 24),
               ),
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: controller.isLoggedIn.value
+                onPressed: controller.isLoggedIn
                     ? controller.logout
                     : controller.login,
                 child: Text(
-                  controller.isLoggedIn.value ? 'Logout' : 'Login',
+                  controller.isLoggedIn ? 'Logout' : 'Login',
                 ),
               ),
             ],

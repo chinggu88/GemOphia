@@ -48,3 +48,6 @@ app.*.map.json
 .env
 .env.local
 .env.*.local
+
+# MCP configuration (contains project credentials)
+.mcp.json
