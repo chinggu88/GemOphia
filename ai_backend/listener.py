@@ -18,17 +18,11 @@ import time
 from datetime import datetime
 
 from app.services.realtime_listener import get_listener
+from app.schedulers.daily_analysis import scheduler, daily_conversation_analysis
+from app.core.logging import setup_logging
 
-# 로깅 설정
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(sys.stdout),
-        logging.FileHandler('listener.log')
-    ]
-)
-logger = logging.getLogger(__name__)
+# 로깅 설정 초기화
+logger = setup_logging()
 
 
 # 우아한 종료를 위한 플래그
@@ -56,6 +50,10 @@ async def main():
 
     # Realtime Listener 시작
     try:
+        # 스케줄러 시작
+        scheduler.start()
+        logger.info("⏰ Scheduler started")
+        
         listener = get_listener()
         listener.start()
 

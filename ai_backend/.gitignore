@@ -24,7 +24,7 @@ ENV/
 *.pt
 *.pth
 *.onnx
-models/
+
 
 # Logs
 *.log
