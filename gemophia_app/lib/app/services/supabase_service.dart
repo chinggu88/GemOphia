@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:app_links/app_links.dart' show AppLinks;
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:gemophia_app/app/routes/app_pages.dart';
 import 'package:get/get.dart';
@@ -26,6 +27,11 @@ class SupabaseService extends GetxController {
   set user(User value) => _user.value = value;
   User get user => _user.value;
 
+  // 초대 코드
+  final _inviteCode = ''.obs;
+  String get inviteCode => _inviteCode.value;
+  set inviteCode(String value) => _inviteCode.value = value;
+
   @override
   void onInit() async {
     super.onInit();
@@ -51,6 +57,13 @@ class SupabaseService extends GetxController {
         // );
       }
     });
+    final appLinks = AppLinks();
+    appLinks.uriLinkStream.listen((uri) {
+      List<String> temp = uri.toString().split('invite_code=');
+      if (temp.length > 1) {
+        SupabaseService.to.inviteCode = temp[1];
+      }
+    });
   }
 
   SupabaseClient get client => _client;
@@ -70,7 +83,7 @@ class SupabaseService extends GetxController {
       } else {
         // couples 테이블에 데이터가 없으면 INVITE 페이지로 이동
 
-        Get.offAllNamed(Routes.INVITE);
+        Get.offAllNamed(Routes.INVITE, parameters: {'inviteCode': inviteCode});
       }
     } catch (e) {
       print('couples 조회 실패: $e');

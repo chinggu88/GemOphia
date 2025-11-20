@@ -53,7 +53,8 @@ class InviteController extends GetxController {
       }
 
       // 2. URL에서 초대 코드 확인
-      print('asdf URL에서 초대 코드 확인 ${Get.parameters['invite_code']}');
+      print('asdf URL에서 초대 코드 확인 ${Get.parameters['inviteCode']}');
+      inviteCode = Get.parameters['inviteCode'] ?? '';
 
       // 3. 커플 정보 확인
       final coupleData = await _checkCoupleInfo(userId);
@@ -69,8 +70,8 @@ class InviteController extends GetxController {
       hasCoupleInfo = false;
 
       if (inviteCode != null && inviteCode.isNotEmpty) {
-        // 초대 코드가 있는 경우 -> 커플 정보 조회
-        await _loadInviterInfo(inviteCode);
+        // 초대 코드가 있는 경우 -> 커플 정보 저장
+        await _joinCouple(inviteCode, userId);
       } else {
         // 초대 코드가 없는 경우 -> 새로운 초대 코드 생성
         await _generateInviteCode(userId);
@@ -82,13 +83,52 @@ class InviteController extends GetxController {
     }
   }
 
+  /// 초대 코드로 커플 연결
+  Future<void> _joinCouple(String code, String userId) async {
+    try {
+      // 1. couples 테이블에서 code로 검색
+      final couples = await SupabaseService.to.readWithFilter(
+        table: 'couples',
+        filters: {'code': code},
+      );
+
+      if (couples.isNotEmpty) {
+        // 2. 데이터가 있을시 user2_id와 status를 true로 업데이트
+        final coupleId = couples.first['id'];
+        await SupabaseService.to.updateData(
+          table: 'couples',
+          data: {
+            'user2_id': userId,
+            'status': true, // boolean 타입
+          },
+          match: {'id': coupleId},
+        );
+
+        Get.snackbar('성공', '커플 연결이 완료되었습니다!');
+        Get.offAllNamed(Routes.HOME);
+      } else {
+        // 2-1. 데이터가 없을시 오류 팝업 표시
+        Get.snackbar('오류', '유효하지 않은 초대 코드입니다.');
+        // 유효하지 않은 코드이므로 내 초대 코드 생성 로직으로 전환
+        inviteCode = '';
+        await _generateInviteCode(userId);
+      }
+    } catch (e) {
+      log('커플 연결 실패: $e');
+      Get.snackbar('오류', '커플 연결 실패: $e');
+      // 실패 시에도 내 초대 코드 생성 시도
+      inviteCode = '';
+      await _generateInviteCode(userId);
+    }
+  }
+
   /// 커플 정보 확인
   Future<Map<String, dynamic>?> _checkCoupleInfo(String userId) async {
     try {
       // user1_id 또는 user2_id가 현재 사용자인 커플 찾기
       final couples = await SupabaseService.to.readWithFilter(
         table: 'couples',
-        filters: {},
+        filters: {'status': true},
         columns: '*',
       );
 
@@ -115,43 +155,30 @@ class InviteController extends GetxController {
 
       // 초대 URL 생성 (실제 앱의 딥링크 URL로 변경 필요)
       inviteUrl = 'gemophia://invite?invite_code=$code';
-    } catch (e) {
-      Get.snackbar('오류', '초대 코드 생성 실패: $e');
-    }
-  }
 
-  /// 초대자 정보 로드
-  Future<void> _loadInviterInfo(String inviterUserId) async {
-    try {
-      // 초대 코드(user_id 앞 8자리)로 초대자 찾기
-      final allUsers = await SupabaseService.to.readAll(table: 'profiles');
-
-      String? inviterId;
-      for (var user in allUsers) {
-        if (user['id'].toString().substring(0, 8).toUpperCase() ==
-            inviterUserId.toUpperCase()) {
-          inviterId = user['id'];
-          break;
-        }
-      }
-
-      if (inviterId == null) {
-        Get.snackbar('오류', '유효하지 않은 초대 코드입니다.');
-        inviteCode = '';
-        await _generateInviteCode(SupabaseService.to.currentUser!.id);
-        return;
-      }
-
-      // 초대자의 프로필 정보 가져오기
-      final inviterProfile = await SupabaseService.to.readSingle(
-        table: 'profiles',
-        match: {'id': inviterId},
+      // 1. couples 테이블에서 user1_id로 검색
+      final existingCouples = await SupabaseService.to.readWithFilter(
+        table: 'couples',
+        filters: {'user1_id': userId},
       );
 
-      inviterCoupleInfo.value = inviterProfile;
-      inviteCode = inviterUserId;
+      if (existingCouples.isNotEmpty) {
+        // 1-1) 검색 결과가 있을시 해당 정보 업데이트
+        await SupabaseService.to.updateData(
+          table: 'couples',
+          data: {'user1_id': userId, 'code': code},
+          match: {'user1_id': userId},
+        );
+      } else {
+        // 1-2) 검색 결과가 없을시 해당 정보 insert
+        await SupabaseService.to.insert(
+          table: 'couples',
+          data: {'user1_id': userId, 'code': code},
+        );
+      }
     } catch (e) {
-      Get.snackbar('오류', '초대자 정보 로드 실패: $e');
+      log('초대 코드 생성 실패: $e');
+      Get.snackbar('오류', '초대 코드 생성 실패: $e');
     }
   }
 
