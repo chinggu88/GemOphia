@@ -61,7 +61,14 @@ def inspect_table_schema(table_name: str):
 
 
 if __name__ == "__main__":
-    tables = ['conversations', 'couples', 'profiles', 'schedules', 'todos']
+    tables = [
+        'ai_conversation_files',  # PDF 파일 메타데이터
+        'conversations',
+        'couples',
+        'profiles',
+        'schedules',
+        'todos'
+    ]
 
     print("="*80)
     print("🔍 Supabase 테이블 스키마 상세 조회")
