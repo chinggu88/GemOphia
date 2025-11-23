@@ -13,6 +13,7 @@ ENV/
 .env
 .env.local
 .env.example
+ai/
 
 # IDE
 .vscode/
@@ -24,7 +25,7 @@ ENV/
 *.pt
 *.pth
 *.onnx
-models/
+
 
 # Logs
 *.log
@@ -34,3 +35,5 @@ logs/
 .pytest_cache/
 .coverage
 htmlcov/
+tests/
+output/

@@ -2,21 +2,14 @@
 Language Style Matching (LSM) Analyzer
 Based on Ireland & Pennebaker (2010) research
 """
-from kiwipiepy import Kiwi
 from collections import defaultdict
 from ..models.schemas import LSMScore
-
 
 class LSMAnalyzer:
     """
     언어 스타일 매칭 (LSM) 분석기
-
-    커플의 대화에서 기능어(function words) 사용 패턴을 분석하여
-    언어 스타일이 얼마나 유사한지 측정합니다.
-
-    연구 결과: LSM 점수가 0.8 이상이면 관계 만족도가 높음
     """
-
+    
     # 한국어 기능어 카테고리
     FUNCTION_WORDS = {
         'personal_pronouns': ['나', '저', '내', '제', '나는', '저는', '내가', '제가'],
@@ -32,7 +25,12 @@ class LSMAnalyzer:
 
     def __init__(self):
         """Initialize Kiwi morphological analyzer"""
-        self.kiwi = Kiwi()
+        try:
+            from kiwipiepy import Kiwi
+            self.kiwi = Kiwi()
+        except ImportError:
+            print("⚠️ kiwipiepy not installed. LSM analysis will be disabled.")
+            self.kiwi = None
 
     def extract_function_words(self, text: str) -> dict[str, int]:
         """
