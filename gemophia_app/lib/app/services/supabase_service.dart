@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:app_links/app_links.dart' show AppLinks;
@@ -7,6 +8,7 @@ import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:gemophia_app/app/core/config/env_config.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:gemophia_app/app/models/couple.dart';
 
 class SupabaseService extends GetxController {
   static SupabaseService get to => Get.find();
@@ -32,6 +34,17 @@ class SupabaseService extends GetxController {
   String get inviteCode => _inviteCode.value;
   set inviteCode(String value) => _inviteCode.value = value;
 
+  // 커플 정보 (Couple 객체)
+  final _couple = Couple().obs;
+  Couple get couple => _couple.value;
+  set couple(Couple value) {
+    _couple.value = value;
+  }
+
+  final _isInitialized = false.obs;
+  bool get isInitialized => _isInitialized.value;
+  set isInitialized(bool value) => _isInitialized.value = value;
+
   @override
   void onInit() async {
     super.onInit();
@@ -47,14 +60,15 @@ class SupabaseService extends GetxController {
       final session = data.session;
       if (session != null) {
         // 로그인 성공
-        print('로그인 성공: ${session.user.email}');
         user = session.user;
 
         // couples 테이블에서 현재 사용자 조회
-        _checkCoupleAndNavigate(session.user.id);
-        // Navigator.of(context).pushReplacement(
-        //   MaterialPageRoute(builder: (_) => HomePage()),
-        // );
+        checkCoupleAndNavigate(session.user.id);
+        isInitialized = true;
+      } else {
+        log('로그인 정보 없음');
+        Get.offAllNamed(Routes.LOGIN);
+        isInitialized = true;
       }
     });
     final appLinks = AppLinks();
@@ -73,20 +87,24 @@ class SupabaseService extends GetxController {
   Stream<AuthState> get authStateChanges => _client.auth.onAuthStateChange;
 
   // couples 테이블 조회 후 네비게이션 처리
-  Future<void> _checkCoupleAndNavigate(String uuid) async {
+  Future<void> checkCoupleAndNavigate(String uuid) async {
     try {
-      final result = await readSingle(table: 'couples', match: {'id': uuid});
+      // user1_id 또는 user2_id로 조회
+      final results = await _client
+          .from('couples')
+          .select()
+          .or('user1_id.eq.$uuid,user2_id.eq.$uuid');
 
-      if (result != null) {
-        // couples 테이블에 데이터가 있으면 HOME으로 이동
+      if (results.isNotEmpty) {
+        // couples 테이블에 데이터가 있으면 커플 정보 저장 후 HOME으로 이동
+        couple = Couple.fromJson(results.first);
         Get.offAllNamed(Routes.HOME);
       } else {
         // couples 테이블에 데이터가 없으면 INVITE 페이지로 이동
-
         Get.offAllNamed(Routes.INVITE, parameters: {'inviteCode': inviteCode});
       }
     } catch (e) {
-      print('couples 조회 실패: $e');
+      log('couples 조회 실패: $e');
       // 에러 발생 시 기본적으로 HOME으로 이동
       Get.offAllNamed(Routes.HOME);
     }
@@ -365,6 +383,7 @@ class SupabaseService extends GetxController {
           'bucket_name': bucket,
           if (conversationId != null) 'conversation_id': conversationId,
           if (description != null) 'description': description,
+          if (couple.id != null) 'couple_id': couple.id,
         },
       );
       await EasyLoading.dismiss();
@@ -372,58 +391,6 @@ class SupabaseService extends GetxController {
     } catch (e) {
       await EasyLoading.dismiss();
       throw Exception('File pick and upload failed: $e');
-    }
-  }
-
-  // File Upload to Storage
-  Future<String> uploadFile({
-    required String filePath,
-    required String fileName,
-    String bucket = 'AI_conversation_data',
-  }) async {
-    try {
-      final file = File(filePath);
-      await _client.storage
-          .from(bucket)
-          .upload(
-            fileName,
-            file,
-            fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
-          );
-
-      // Get public URL
-      final publicUrl = _client.storage.from(bucket).getPublicUrl(fileName);
-      return publicUrl;
-    } catch (e) {
-      throw Exception('File upload failed: $e');
-    }
-  }
-
-  // Upload File from Bytes
-  Future<String> uploadFileFromBytes({
-    required Uint8List bytes,
-    required String fileName,
-    String bucket = 'AI_conversation_data',
-    String? mimeType,
-  }) async {
-    try {
-      await _client.storage
-          .from(bucket)
-          .uploadBinary(
-            fileName,
-            bytes,
-            fileOptions: FileOptions(
-              cacheControl: '3600',
-              upsert: false,
-              contentType: mimeType,
-            ),
-          );
-
-      // Get public URL
-      final publicUrl = _client.storage.from(bucket).getPublicUrl(fileName);
-      return publicUrl;
-    } catch (e) {
-      throw Exception('File upload from bytes failed: $e');
     }
   }
 

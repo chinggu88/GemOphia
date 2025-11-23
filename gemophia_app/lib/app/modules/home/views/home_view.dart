@@ -54,6 +54,7 @@ class HomeView extends GetView<HomeController> {
           notchSmoothness: NotchSmoothness.verySmoothEdge,
           leftCornerRadius: 32,
           rightCornerRadius: 32,
+          // blurEffect: true,
           onTap: (index) => controller.changeTab(index),
           //other params
         ),
