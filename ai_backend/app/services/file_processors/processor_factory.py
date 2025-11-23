@@ -8,6 +8,7 @@ import logging
 
 from .base_processor import BaseFileProcessor
 from .kakao_txt_processor import KakaoTxtProcessor
+from .kakao_csv_processor import KakaoCsvProcessor
 from .pdf_processor import PdfProcessor
 from .audio_processor import AudioProcessor
 
@@ -24,6 +25,7 @@ class FileProcessorFactory:
     # 등록된 프로세서 목록
     _processors = [
         KakaoTxtProcessor(),
+        KakaoCsvProcessor(),
         PdfProcessor(),
         AudioProcessor(),
     ]

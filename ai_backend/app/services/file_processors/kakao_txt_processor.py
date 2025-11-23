@@ -53,8 +53,13 @@ class KakaoTxtProcessor(BaseFileProcessor):
             with open(file_path, 'r', encoding=encoding) as f:
                 raw_text = f.read()
 
+            # 형식 감지 (한글 vs 영문)
+            is_english = self._detect_format(raw_text)
+            format_type = "English" if is_english else "Korean"
+            logger.info(f"   Detected format: {format_type}")
+
             # 대화 파싱
-            conversations = self._parse_conversations(raw_text)
+            conversations = self._parse_conversations(raw_text, is_english)
 
             if not conversations:
                 logger.warning("No conversations found in file")
@@ -91,90 +96,147 @@ class KakaoTxtProcessor(BaseFileProcessor):
                 error_message=str(e)
             )
 
-    def _parse_conversations(self, text: str) -> List[ConversationMessage]:
+    def _detect_format(self, text: str) -> bool:
         """
-        텍스트에서 대화 메시지 추출
+        텍스트 파일 형식 감지 (한글 vs 영문)
 
         Args:
             text: 원본 텍스트
 
         Returns:
+            bool: True if English format, False if Korean format
+        """
+        # 영문 형식 패턴 체크
+        # "KakaoTalk Chats with" 또는 "January 1, 2022 at" 같은 패턴
+        english_patterns = [
+            r'KakaoTalk Chats with',
+            r'Date Saved\s*:',
+            r'[A-Z][a-z]+\s+\d{1,2},\s+\d{4}\s+at\s+\d{1,2}:\d{2}\s+[AP]M'
+        ]
+
+        for pattern in english_patterns:
+            if re.search(pattern, text[:1000]):  # 첫 1000자만 확인
+                return True
+
+        # 한글 형식 패턴 체크
+        korean_patterns = [
+            r'\d{4}년\s*\d{1,2}월\s*\d{1,2}일',
+            r'\[.+?\]\s*\[오전|오후\s+\d{1,2}:\d{2}\]'
+        ]
+
+        for pattern in korean_patterns:
+            if re.search(pattern, text[:1000]):
+                return False
+
+        # 기본값: 한글
+        return False
+
+    def _parse_conversations(self, text: str, is_english: bool = False) -> List[ConversationMessage]:
+        """
+        텍스트에서 대화 메시지 추출
+
+        Args:
+            text: 원본 텍스트
+            is_english: True if English format, False if Korean format
+
+        Returns:
             List[ConversationMessage]: 파싱된 메시지 리스트
+        """
+        if is_english:
+            return self._parse_english_format(text)
+        else:
+            return self._parse_korean_format(text)
+
+    def _parse_english_format(self, text: str) -> List[ConversationMessage]:
+        """
+        영문 형식 카카오톡 파일 파싱
+
+        예시:
+        January 3, 2022 at 5:59 PM, ♥그만개겨김송♥ : 헤이헤이헤이헤이헤이
         """
         conversations = []
         lines = text.split('\n')
-
-        current_date = None  # 현재 날짜 컨텍스트
 
         for line in lines:
             line = line.strip()
             if not line:
                 continue
 
-            # 날짜 구분선 파싱
-            # 예: "------------------- 2024년 1월 15일 월요일 -------------------"
-            date_match = re.match(r'-+\s*(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일', line)
-            if date_match:
-                year, month, day = date_match.groups()
-                current_date = datetime(int(year), int(month), int(day))
-                continue
-
-            # 메시지 파싱
-            # 패턴 1: [발신자] [시간] 메시지
-            # 예: "[철수] [오후 2:30] 오늘 저녁 뭐 먹을까?"
-            msg_match = re.match(r'\[(.+?)\]\s*\[(.+?)\]\s*(.+)', line)
+            # 영문 형식 메시지 파싱
+            # 패턴: "January 3, 2022 at 5:59 PM, sender : message"
+            msg_match = re.match(
+                r'([A-Z][a-z]+\s+\d{1,2},\s+\d{4})\s+at\s+(\d{1,2}:\d{2}\s+[AP]M),\s*(.+?)\s*:\s*(.+)',
+                line
+            )
 
             if msg_match:
-                sender = msg_match.group(1).strip()
-                time_str = msg_match.group(2).strip()
-                message = msg_match.group(3).strip()
+                date_str = msg_match.group(1)  # "January 3, 2022"
+                time_str = msg_match.group(2)  # "5:59 PM"
+                sender = msg_match.group(3).strip()
+                message = msg_match.group(4).strip()
 
-                # 시간 파싱
-                timestamp = self._parse_time(current_date, time_str)
+                try:
+                    # 날짜/시간 파싱
+                    datetime_str = f"{date_str} {time_str}"
+                    timestamp = datetime.strptime(datetime_str, "%B %d, %Y %I:%M %p")
 
-                if timestamp:
                     conversations.append(ConversationMessage(
                         timestamp=timestamp,
                         sender=sender,
                         message=message
                     ))
-                else:
-                    logger.warning(f"Failed to parse timestamp: {time_str}")
+                except Exception as e:
+                    logger.warning(f"Failed to parse English format line: {line[:100]}, error: {e}")
 
         return conversations
 
-    def _parse_time(self, base_date: datetime, time_str: str) -> datetime:
+    def _parse_korean_format(self, text: str) -> List[ConversationMessage]:
         """
-        시간 문자열을 datetime으로 변환
+        한글 형식 카카오톡 파일 파싱
 
-        Args:
-            base_date: 기준 날짜
-            time_str: 시간 문자열 (예: "오후 2:30", "오전 11:15")
-
-        Returns:
-            datetime: 파싱된 시간
+        예시:
+        2025년 2월 14일 오후 2:07, 딱복 🍑 : 소영님 몸은 괜찮으신가여..
         """
-        if not base_date:
-            return None
+        conversations = []
+        lines = text.split('\n')
 
-        try:
-            # "오후 2:30" 형식 파싱
-            match = re.match(r'(오전|오후)\s*(\d{1,2}):(\d{2})', time_str)
-            if not match:
-                return None
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
 
-            period, hour, minute = match.groups()
-            hour = int(hour)
-            minute = int(minute)
+            # 한글 형식 메시지 파싱
+            # 패턴: "2025년 2월 14일 오후 2:07, 딱복 🍑 : 소영님 몸은 괜찮으신가여.."
+            msg_match = re.match(
+                r'(\d{4})년\s+(\d{1,2})월\s+(\d{1,2})일\s+(오전|오후)\s+(\d{1,2}):(\d{2}),\s*(.+?)\s*:\s*(.+)',
+                line
+            )
 
-            # 오후 변환 (12시간제 → 24시간제)
-            if period == '오후' and hour != 12:
-                hour += 12
-            elif period == '오전' and hour == 12:
-                hour = 0
+            if msg_match:
+                year = int(msg_match.group(1))
+                month = int(msg_match.group(2))
+                day = int(msg_match.group(3))
+                period = msg_match.group(4)  # 오전/오후
+                hour = int(msg_match.group(5))
+                minute = int(msg_match.group(6))
+                sender = msg_match.group(7).strip()
+                message = msg_match.group(8).strip()
 
-            return base_date.replace(hour=hour, minute=minute, second=0, microsecond=0)
+                try:
+                    # 오후 변환 (12시간제 → 24시간제)
+                    if period == '오후' and hour != 12:
+                        hour += 12
+                    elif period == '오전' and hour == 12:
+                        hour = 0
 
-        except Exception as e:
-            logger.warning(f"Time parsing error for '{time_str}': {e}")
-            return None
+                    timestamp = datetime(year, month, day, hour, minute, 0)
+
+                    conversations.append(ConversationMessage(
+                        timestamp=timestamp,
+                        sender=sender,
+                        message=message
+                    ))
+                except Exception as e:
+                    logger.warning(f"Failed to parse Korean format line: {line[:100]}, error: {e}")
+
+        return conversations

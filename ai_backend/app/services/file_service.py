@@ -5,6 +5,7 @@ Supabase Storage에서 파일을 가져와 전처리하는 메인 서비스
 """
 import os
 import tempfile
+import httpx
 from typing import Optional
 from datetime import datetime
 import logging
@@ -16,13 +17,36 @@ from .file_processors.base_processor import ProcessedFile
 logger = logging.getLogger(__name__)
 
 
+def sanitize_text(text: Optional[str]) -> Optional[str]:
+    """
+    PostgreSQL TEXT 타입에 저장할 수 없는 문자 제거
+
+    Args:
+        text: 원본 텍스트
+
+    Returns:
+        정제된 텍스트
+    """
+    if not text:
+        return text
+
+    # NULL 바이트 제거 (PostgreSQL TEXT 타입은 \u0000을 지원하지 않음)
+    text = text.replace('\u0000', '')
+
+    # 기타 제어 문자 제거 (선택적)
+    # text = ''.join(char for char in text if char.isprintable() or char in '\n\r\t')
+
+    return text
+
+
 class FileService:
     """
     파일 처리 서비스
 
-    1. Supabase Storage에서 파일 다운로드
-    2. 적절한 프로세서로 전처리
-    3. 결과를 ai_conversation_files 테이블에 저장
+    1. ai_conversation_files 테이블에서 파일 정보 조회
+    2. Supabase Storage에서 파일 다운로드
+    3. 적절한 프로세서로 전처리
+    4. ai_preprocessed_data 테이블에 결과 저장
     """
 
     def __init__(self):
@@ -30,15 +54,13 @@ class FileService:
 
     async def process_file_from_storage(
         self,
-        file_id: str,
-        bucket_name: str = 'conversation-files'
+        file_id: str
     ) -> ProcessedFile:
         """
         Supabase Storage에서 파일을 가져와 처리
 
         Args:
             file_id: ai_conversation_files 테이블의 레코드 ID
-            bucket_name: Supabase Storage 버킷 이름
 
         Returns:
             ProcessedFile: 처리 결과
@@ -57,25 +79,22 @@ class FileService:
                 raise ValueError(f"File record not found: {file_id}")
 
             file_data = file_record.data
-            storage_path = file_data['storage_path']
-            file_name = file_data['file_name']
-            couple_id = file_data['couple_id']
+            file_url = file_data['file_url']
+            file_name = file_data.get('original_file_name') or file_data['file_name']
+            couple_id = file_data.get('couple_id')
+            user_id = file_data.get('user_id')
 
             logger.info(f"   File: {file_name}")
-            logger.info(f"   Storage path: {storage_path}")
+            logger.info(f"   URL: {file_url}")
 
-            # 2. processing 상태로 업데이트
+            # 2. status를 'processing'으로 업데이트
             self.supabase.table('ai_conversation_files') \
-                .update({'processing_status': 'processing'}) \
+                .update({'status': 'processing'}) \
                 .eq('id', file_id) \
                 .execute()
 
-            # 3. Supabase Storage에서 파일 다운로드
-            local_path = await self._download_from_storage(
-                bucket_name,
-                storage_path,
-                file_name
-            )
+            # 3. 파일 다운로드 (file_url에서 직접)
+            local_path = await self._download_from_url(file_url, file_name)
 
             # 4. 적절한 프로세서로 처리
             processor = FileProcessorFactory.get_processor(file_name)
@@ -88,10 +107,21 @@ class FileService:
 
             result = await processor.process(local_path)
 
-            # 5. 처리 결과를 DB에 저장
-            await self._save_processing_result(file_id, couple_id, result)
+            # 5. 처리 결과를 ai_preprocessed_data 테이블에 저장
+            await self._save_to_preprocessed_data(
+                file_id=file_id,
+                couple_id=couple_id,
+                user_id=user_id,
+                result=result
+            )
 
-            # 6. 임시 파일 삭제
+            # 6. ai_conversation_files status를 'completed'로 업데이트
+            self.supabase.table('ai_conversation_files') \
+                .update({'status': 'completed'}) \
+                .eq('id', file_id) \
+                .execute()
+
+            # 7. 임시 파일 삭제
             if os.path.exists(local_path):
                 os.remove(local_path)
                 logger.debug(f"🗑️ Deleted temp file: {local_path}")
@@ -105,10 +135,7 @@ class FileService:
             # 실패 상태로 업데이트
             try:
                 self.supabase.table('ai_conversation_files') \
-                    .update({
-                        'processing_status': 'failed',
-                        'processed_at': datetime.now().isoformat()
-                    }) \
+                    .update({'status': 'failed'}) \
                     .eq('id', file_id) \
                     .execute()
             except:
@@ -116,35 +143,35 @@ class FileService:
 
             raise
 
-    async def _download_from_storage(
+    async def _download_from_url(
         self,
-        bucket_name: str,
-        storage_path: str,
+        file_url: str,
         file_name: str
     ) -> str:
         """
-        Supabase Storage에서 파일 다운로드
+        URL에서 파일 다운로드
 
         Args:
-            bucket_name: 버킷 이름
-            storage_path: Storage 경로
+            file_url: 파일 URL (Supabase Storage public URL)
             file_name: 파일 이름
 
         Returns:
             str: 로컬 임시 파일 경로
         """
         try:
-            logger.info(f"⬇️ Downloading from Supabase Storage...")
+            logger.info(f"⬇️ Downloading from URL: {file_url[:50]}...")
 
-            # 파일 다운로드
-            response = self.supabase.storage.from_(bucket_name).download(storage_path)
+            # HTTP GET으로 파일 다운로드
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                response = await client.get(file_url)
+                response.raise_for_status()
 
             # 임시 파일로 저장
             temp_dir = tempfile.mkdtemp()
             local_path = os.path.join(temp_dir, file_name)
 
             with open(local_path, 'wb') as f:
-                f.write(response)
+                f.write(response.content)
 
             logger.info(f"✅ Downloaded to: {local_path}")
             return local_path
@@ -153,93 +180,69 @@ class FileService:
             logger.error(f"Download failed: {e}")
             raise
 
-    async def _save_processing_result(
+    async def _save_to_preprocessed_data(
         self,
         file_id: str,
-        couple_id: str,
+        couple_id: Optional[str],
+        user_id: Optional[str],
         result: ProcessedFile
     ):
         """
-        처리 결과를 DB에 저장
+        처리 결과를 ai_preprocessed_data 테이블에 저장
 
         Args:
             file_id: 파일 ID
             couple_id: 커플 ID
+            user_id: 사용자 ID
             result: 처리 결과
         """
         try:
-            # 1. ai_conversation_files 테이블 업데이트
-            update_data = {
-                'processing_status': 'completed' if result.success else 'failed',
-                'processed_at': datetime.now().isoformat(),
-                'extracted_text': result.raw_text[:10000] if result.raw_text else None,  # 텍스트 일부만 저장
-                'extracted_conversations': [
-                    {
+            # 대화 데이터를 JSONB 형식으로 변환 (텍스트 정제)
+            parsed_conversations = []
+            if result.conversations:
+                for msg in result.conversations:
+                    parsed_conversations.append({
                         'timestamp': msg.timestamp.isoformat() if msg.timestamp else None,
-                        'sender': msg.sender,
-                        'message': msg.message,
+                        'sender': sanitize_text(msg.sender),
+                        'message': sanitize_text(msg.message),
                         'metadata': msg.metadata
-                    }
-                    for msg in (result.conversations or [])
-                ],
-                'analysis_summary': {
-                    'total_messages': result.total_messages,
-                    'participants': result.participants,
-                    'date_range': {
-                        'start': result.date_range['start'].isoformat() if result.date_range else None,
-                        'end': result.date_range['end'].isoformat() if result.date_range else None,
-                    } if result.date_range else None,
-                    'warnings': result.warnings
-                }
+                    })
+
+            # ai_preprocessed_data에 INSERT
+            # NOTE: user_id는 profiles 테이블에 레코드가 있어야 함
+            # 테스트용으로 일단 None 설정 (실제 앱 사용 시 자동 생성됨)
+            preprocessed_data = {
+                'file_id': file_id,
+                'couple_id': couple_id,
+                'user_id': None,  # profiles에 레코드 없으면 FK 에러 발생하므로 None
+                'processing_status': 'completed' if result.success else 'failed',
+                'extracted_text': sanitize_text(result.raw_text),
+                'parsed_conversations': parsed_conversations,
+                'total_messages': result.total_messages,
+                'participants': result.participants,
+                'date_range': {
+                    'start': result.date_range['start'].isoformat() if result.date_range and result.date_range.get('start') else None,
+                    'end': result.date_range['end'].isoformat() if result.date_range and result.date_range.get('end') else None,
+                } if result.date_range else None,
+                'file_type': result.file_type,
+                'error_message': result.error_message if not result.success else None,
+                'warnings': result.warnings,
+                'processed_at': datetime.now().isoformat()
             }
 
-            self.supabase.table('ai_conversation_files') \
-                .update(update_data) \
-                .eq('id', file_id) \
+            insert_result = self.supabase.table('ai_preprocessed_data') \
+                .insert(preprocessed_data) \
                 .execute()
 
-            logger.info(f"💾 Saved processing result to ai_conversation_files")
+            logger.info(f"💾 Saved preprocessing result to ai_preprocessed_data")
 
-            # 2. conversations 테이블에 대화 INSERT
-            if result.success and result.conversations:
-                await self._insert_conversations_to_db(couple_id, result.conversations)
+            if insert_result.data:
+                preprocessed_id = insert_result.data[0]['id']
+                logger.info(f"   Preprocessed data ID: {preprocessed_id}")
 
         except Exception as e:
-            logger.error(f"Failed to save processing result: {e}")
+            logger.error(f"Failed to save preprocessing result: {e}")
             raise
-
-    async def _insert_conversations_to_db(self, couple_id: str, conversations):
-        """
-        파싱된 대화를 conversations 테이블에 INSERT
-
-        Args:
-            couple_id: 커플 ID
-            conversations: 대화 메시지 리스트
-        """
-        try:
-            logger.info(f"💾 Inserting {len(conversations)} conversations to DB...")
-
-            # TODO: user_id 매핑 필요 (발신자 이름 → user_id)
-            # 지금은 임시로 couple_id만 사용
-
-            for msg in conversations:
-                conversation_data = {
-                    'couple_id': couple_id,
-                    'user_id': None,  # TODO: 발신자 이름으로 user_id 찾기
-                    'content': msg.message,
-                    'conversation_type': 'ai_imported',  # 파일에서 가져온 대화 표시
-                    'created_at': msg.timestamp.isoformat() if msg.timestamp else datetime.now().isoformat()
-                }
-
-                self.supabase.table('conversations').insert(conversation_data).execute()
-
-            logger.info(f"✅ Inserted {len(conversations)} conversations")
-
-        except Exception as e:
-            logger.error(f"Failed to insert conversations: {e}")
-            # 여기서는 에러를 raise하지 않고 warning만 로깅
-            # (파일 처리는 성공했지만 DB INSERT만 실패한 경우)
-            logger.warning("⚠️ Conversations were not saved to DB, but file processing succeeded")
 
 
 # 싱글톤 인스턴스

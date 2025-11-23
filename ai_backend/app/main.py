@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .core.config import get_settings
 from .api.v1 import analysis
-from .services.realtime_listener import get_listener
+from .listeners.file_upload_listener import get_file_upload_listener
 
 # Logging
 logging.basicConfig(
@@ -33,13 +33,14 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("🚀 Starting GemOphia AI Backend...")
 
+    file_listener = None
     try:
-        # Realtime Listener 시작
-        listener = get_listener()
-        listener.start()
-        logger.info("✅ Realtime Listener started successfully")
+        # File Upload Realtime Listener 시작 (async)
+        file_listener = get_file_upload_listener()
+        await file_listener.start()  # await 추가
+        logger.info("✅ File Upload Realtime Listener started successfully")
     except Exception as e:
-        logger.error(f"❌ Failed to start Realtime Listener: {e}")
+        logger.error(f"❌ Failed to start File Upload Realtime Listener: {e}")
         # 리스너 실패해도 API는 계속 실행
 
     yield
@@ -47,12 +48,12 @@ async def lifespan(app: FastAPI):
     # Shutdown
     logger.info("🛑 Shutting down GemOphia AI Backend...")
 
-    try:
-        listener = get_listener()
-        listener.stop()
-        logger.info("✅ Realtime Listener stopped")
-    except Exception as e:
-        logger.error(f"Error stopping Realtime Listener: {e}")
+    if file_listener:
+        try:
+            file_listener.stop()
+            logger.info("✅ File Upload Realtime Listener stopped")
+        except Exception as e:
+            logger.error(f"Error stopping File Upload Realtime Listener: {e}")
 
 
 # Create FastAPI app
