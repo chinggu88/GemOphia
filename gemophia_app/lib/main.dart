@@ -37,9 +37,9 @@ void main() async {
       designSize: const Size(375, 812),
       child: GetMaterialApp(
         title: '퐁당',
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.system,
+        // theme: AppTheme.lightTheme,
+        // darkTheme: AppTheme.darkTheme,
+        // themeMode: ThemeMode.system,
         initialBinding: InitBinding(),
         initialRoute: AppPages.INITIAL,
         getPages: AppPages.routes,
